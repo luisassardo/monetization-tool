@@ -1,7 +1,4 @@
-# Render Blueprint - Deploy with one click
-# https://render.com/docs/blueprint-spec
-
-services:
+#services:
   - type: web
     name: monetization-tool
     runtime: python
