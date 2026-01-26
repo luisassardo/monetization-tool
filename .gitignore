@@ -1,0 +1,17 @@
+# Secrets / env files
+.env
+.env.*
+*.key
+*.pem
+credentials.json
+secrets.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS files
+.DS_Store
+Thumbs.db
