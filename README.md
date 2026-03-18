@@ -2,6 +2,11 @@
 
 Una herramienta interactiva para explorar y consultar datos de cuentas de Facebook que participan en programas de monetización en Centroamérica.
 
+## Captura de pantalla 
+<img width="967" height="878" alt="monetization tool " src="https://github.com/user-attachments/assets/0b00699e-70ae-48b9-beb1-8a9619c93155" />
+
+
+
 ## 🚀 Características
 
 - **Dashboard completo** con visualizaciones de datos
