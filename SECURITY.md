@@ -5,7 +5,7 @@ Please do not open public issues for security reports.
 
 Use one of these:
 - GitHub private vulnerability reporting (preferred, if enabled), or
-- Email: security@YOURDOMAIN (replace this)
+- Email: security@j-lab.tools
 
 Please include:
 - What you found and where
