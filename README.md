@@ -40,18 +40,22 @@ Análisis para investigación (`/api/analysis/*`): ráfagas coordinadas, migraci
 
 ## 🔄 Actualizar datos (importador)
 
-No hay API pública del archivo. Los datos frescos vienen del botón **"Export CSV"** en
-[monetization.wtf/monetization-archive](https://www.monetization.wtf/monetization-archive).
-
-1. En el archivo, exporta un CSV (puedes filtrar por país o exportar todo).
-2. Normaliza y filtra a América Latina con el importador:
+**Un solo comando** — `--fetch` jala todos los países de América Latina en vivo desde el endpoint de exportación del archivo (el mismo `csv_data_table` que usa el botón "Export CSV" del sitio) y los normaliza:
 
 ```bash
-python scripts/import_archive.py --input raw_export.csv --dry-run    # revisa el resumen
+python scripts/import_archive.py --fetch --dry-run                      # previsualiza conteos
+python scripts/import_archive.py --fetch --output data/accounts.csv     # escribe el CSV
+```
+
+Trae ~64K cuentas (FB) de 22 países LatAm con datos hasta la fecha más reciente del archivo. Luego haz redeploy (commit del nuevo `data/accounts.csv`).
+
+**Alternativa manual** — si prefieres exportar a mano desde [monetization.wtf/monetization-archive](https://www.monetization.wtf/monetization-archive) (botón "Export CSV"), pasa el archivo:
+
+```bash
 python scripts/import_archive.py --input raw_export.csv --output data/accounts.csv
 ```
 
-El importador es robusto a las inconsistencias del CSV crudo (casing de columnas, UTF-8 inválido, escapes, nombres de idioma no estándar, fechas fantasma/epoch). Filtra a los países de América Latina por **código ISO-2** y deduplica por `account_id`. El esquema de salida son las 17 columnas estándar (ver el _docstring_ del script). Luego haz redeploy.
+El importador es robusto a las inconsistencias del CSV crudo (casing de columnas, UTF-8 inválido, escapes, nombres de idioma no estándar, fechas fantasma/epoch). Filtra a los países de América Latina por **código ISO-2**, normaliza nombres de país, y deduplica por `account_id`. El esquema de salida son las 17 columnas estándar (ver el _docstring_ del script).
 
 ## 🔧 Desarrollo local
 

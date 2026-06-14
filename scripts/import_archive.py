@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 """
-import_archive.py — normalize a raw Meta Monetization Archive export into the
-tool's data/accounts.csv schema, filtered to Latin America.
+import_archive.py — refresh the tool's data/accounts.csv from the Meta
+Monetization Archive, normalized and filtered to Latin America.
 
-There is no public API for the archive. Fresh data comes from the manual
-"Export CSV" on https://www.monetization.wtf/monetization-archive
+REFRESH THE DATA — ONE COMMAND (recommended)
+--------------------------------------------
+    python scripts/import_archive.py --fetch --output data/accounts.csv
 
-HOW TO GET A FRESH EXPORT
--------------------------
-1. Open https://www.monetization.wtf/monetization-archive
-2. (Optional) Filter by Primary admin location to the Latin-American countries,
-   or just export everything — this script filters to LatAm by country code.
-3. Set the date range to cover all programs.
-4. Click "Export CSV". Save the file (e.g. raw_export.csv).
-5. Run:
+`--fetch` pulls each Latin-American country directly from the archive's CSV
+export endpoint (the same `csv_data_table` endpoint the site's "Export CSV"
+button uses) and normalizes the result. No manual download needed. Use
+`--dry-run` first to preview the row counts.
+
+FROM A MANUAL EXPORT (fallback)
+-------------------------------
+If you'd rather export by hand from https://www.monetization.wtf/monetization-archive
+(click "Export CSV"), pass the saved file:
        python scripts/import_archive.py --input raw_export.csv --dry-run
-   Review the summary (rows in / kept / dropped per reason), then:
        python scripts/import_archive.py --input raw_export.csv --output data/accounts.csv
 
 The raw export's column names are human-facing and have changed over time
@@ -35,10 +36,21 @@ Data: monetization.wtf / WHAT TO FIX (supported by Luminate) · CC BY-ND 4.0
 
 import argparse
 import csv
+import io
+import ssl
 import sys
+import time
+import urllib.parse
+import urllib.request
 from datetime import datetime
 
 import pandas as pd
+
+# Archive export endpoint (same one the site's "Export CSV" button calls).
+ARCHIVE_BASE = 'https://www.monetization.wtf/api/csv_data_table/'
+ARCHIVE_REFERER = 'https://www.monetization.wtf/monetization-archive'
+ARCHIVE_UA = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
+              'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36')
 
 # Target schema, in output order.
 TARGET_COLUMNS = [
@@ -210,13 +222,65 @@ def _normalize_dates(series):
     return dt.dt.strftime('%Y-%m-%d')
 
 
-def import_archive(input_path, output_path, dry_run=False):
+def _http_get(url, timeout=180):
+    req = urllib.request.Request(url, headers={'User-Agent': ARCHIVE_UA, 'Referer': ARCHIVE_REFERER})
+    try:
+        ctx = ssl.create_default_context()
+        return urllib.request.urlopen(req, timeout=timeout, context=ctx).read().decode('utf-8', 'replace')
+    except urllib.error.URLError as e:
+        # Some local Python installs lack a usable cert store (the SSL error
+        # surfaces as URLError). The archive is a well-known public host, so
+        # retry once with an unverified context.
+        if isinstance(getattr(e, 'reason', None), ssl.SSLError):
+            ctx = ssl._create_unverified_context()
+            return urllib.request.urlopen(req, timeout=timeout, context=ctx).read().decode('utf-8', 'replace')
+        raise
+
+
+def fetch_latam_csv(max_date=None, platform='facebook'):
+    """Pull each LatAm country from the archive's CSV export endpoint and
+    concatenate into one CSV string. Mirrors the site's "Export CSV" button."""
+    max_date = max_date or datetime.now().strftime('%Y-%m-%d')
+    header, body_lines, total = None, [], 0
+    for code in sorted(LATAM_CODES):
+        params = {
+            'languages': '', 'program_name': '',
+            'minDateCreated': '', 'maxDateCreated': '',
+            'minDateIncluded': '', 'maxDateIncluded': max_date,
+            'minSubscribers': '', 'maxSubscribers': '',
+            'search': '', 'accountId': '',
+            'orderByColumn': 'last_recorded_monetization', 'orderByDirection': 'desc',
+            'platform': platform, 'locations': code,
+        }
+        url = ARCHIVE_BASE + '?' + urllib.parse.urlencode(params)
+        try:
+            text = _http_get(url)
+        except Exception as e:
+            print(f"  ! {code}: fetch failed ({e})", file=sys.stderr)
+            continue
+        lines = text.splitlines()
+        if not lines:
+            print(f"  {code}: 0 rows")
+            continue
+        if header is None:
+            header = lines[0]
+        rows = lines[1:]
+        body_lines.extend(rows)
+        total += len(rows)
+        print(f"  {code}: {len(rows):,} rows (total {total:,})")
+        time.sleep(0.3)  # be polite to the source
+    if header is None:
+        raise RuntimeError('No data returned from the archive endpoint.')
+    return io.StringIO('\n'.join([header] + body_lines) + '\n')
+
+
+def import_archive(input_source, output_path, dry_run=False):
     stats = {'rows_in': 0, 'dropped_non_latam': 0, 'dropped_no_id': 0,
              'dropped_header_dupe': 0, 'dedup_removed': 0, 'rows_out': 0}
 
-    # 1. Read defensively.
+    # 1. Read defensively (input_source: a path or a file-like object).
     df = pd.read_csv(
-        input_path, dtype=str, keep_default_na=False,
+        input_source, dtype=str, keep_default_na=False,
         encoding='utf-8', encoding_errors='replace',
         on_bad_lines='skip', engine='python',
     )
@@ -282,8 +346,10 @@ def import_archive(input_path, output_path, dry_run=False):
             return code
         return LOCATION_NAME_TO_CODE.get(_clean_str(row['admin_location']).lower(), code)
     df['admin_location_code'] = df.apply(resolve_code, axis=1)
+    # Prefer clean short display names for known codes (the raw export uses long
+    # ISO names like "Bolivia, Plurinational State of"); fall back to the raw value.
     df['admin_location'] = df.apply(
-        lambda r: r['admin_location'] or CODE_TO_DISPLAY.get(r['admin_location_code'], r['admin_location']),
+        lambda r: CODE_TO_DISPLAY.get(r['admin_location_code'], r['admin_location']),
         axis=1)
 
     before = len(df)
@@ -326,16 +392,27 @@ def import_archive(input_path, output_path, dry_run=False):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(description='Normalize a raw Meta Monetization Archive export to data/accounts.csv (LatAm).')
-    p.add_argument('--input', '-i', required=True, help='Raw Export CSV from monetization.wtf')
+    p = argparse.ArgumentParser(description='Refresh data/accounts.csv from the Meta Monetization Archive (LatAm).')
+    src = p.add_mutually_exclusive_group(required=True)
+    src.add_argument('--fetch', action='store_true', help='Pull live from the archive export endpoint (all LatAm).')
+    src.add_argument('--input', '-i', help='Use a CSV you exported manually from monetization.wtf.')
     p.add_argument('--output', '-o', default='data/accounts.csv', help='Output path (default: data/accounts.csv)')
+    p.add_argument('--max-date', help="maxDateIncluded for --fetch (YYYY-MM-DD; default: today).")
     p.add_argument('--dry-run', action='store_true', help='Print the summary without writing.')
     args = p.parse_args(argv)
     try:
-        import_archive(args.input, args.output, dry_run=args.dry_run)
+        if args.fetch:
+            print(f"Fetching LatAm from the archive (maxDateIncluded={args.max_date or 'today'})…")
+            source = fetch_latam_csv(max_date=args.max_date)
+        else:
+            source = args.input
+        import_archive(source, args.output, dry_run=args.dry_run)
     except FileNotFoundError:
         print(f"error: input file not found: {args.input}", file=sys.stderr)
         return 2
+    except Exception as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
     return 0
 
 

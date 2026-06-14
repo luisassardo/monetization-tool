@@ -46,6 +46,12 @@ def load_data():
     df = pd.read_csv(DATA_PATH)
     # Guard against a stray duplicated-header row in the source data
     df = df[df['admin_location'] != 'admin_location']
+    # Fill empty string columns (pandas reads blank cells as NaN, which would
+    # serialize as invalid JSON for names/handles/languages/locations).
+    for col in ['account_name', 'account_handle', 'account_language',
+                'account_language_code', 'admin_location', 'admin_location_code']:
+        if col in df.columns:
+            df[col] = df[col].fillna('').astype(str)
     # Convert verified to boolean
     df['account_verified'] = df['account_verified'].astype(str).str.lower() == 'true'
     # Convert subscriber count to int
