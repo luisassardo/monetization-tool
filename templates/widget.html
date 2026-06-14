@@ -1,785 +1,204 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="{{ lang }}" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Widget: Cuentas monetizadas en Facebook</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+  <title>{{ t.title }} · J-Lab</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root {
-      --bg-dark: #1a1a2e;
-      --bg-card: #16213e;
-      --bg-input: #0f3460;
-      --accent: #e94560;
-      --accent-hover: #ff6b6b;
-      --accent-soft: rgba(233, 69, 96, 0.15);
-      --text-primary: #eaeaea;
-      --text-secondary: #a0a0a0;
-      --text-muted: #6b6b6b;
-      --border: #2a2a4a;
-      --success: #4ecca3;
-      --link: #4fc3f7;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    .widget-container {
-      font-family: 'Source Sans 3', -apple-system, sans-serif;
-      background: var(--bg-dark);
-      color: var(--text-primary);
-      line-height: 1.6;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-    }
-
-    a {
-      color: var(--link);
-      text-decoration: none;
-    }
-
-    a:hover {
-      color: var(--accent-hover);
-    }
-
-    /* Header */
-    .widget-header {
-      background: var(--bg-card);
-      padding: 1.25rem 1.5rem;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-
-    .widget-title h1 {
-      font-family: 'Source Serif 4', Georgia, serif;
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin-bottom: 0.15rem;
-    }
-
-    .widget-title p {
-      color: var(--accent);
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-    }
-
-    .widget-actions {
-      display: flex;
-      gap: 0.75rem;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.5rem 0.9rem;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      border: none;
-      font-family: inherit;
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: var(--accent-hover);
-    }
-
-    .btn-secondary {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
-    }
-
-    .btn-secondary:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    /* Stats */
-    .widget-stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1px;
-      background: var(--border);
-    }
-
-    .stat-item {
-      background: var(--bg-card);
-      padding: 1rem;
-      text-align: center;
-    }
-
-    .stat-value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--accent);
-    }
-
-    .stat-label {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-
-    /* Content */
-    .widget-content {
-      padding: 1.25rem;
-    }
-
-    /* Charts Row */
-    .charts-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      margin-bottom: 1.25rem;
-    }
-
-    .chart-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-    }
-
-    .chart-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin-bottom: 0.75rem;
-      color: var(--text-secondary);
-    }
-
-    .chart-container {
-      height: 180px;
-    }
-
-    /* Query Section */
-    .query-section {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-      margin-bottom: 1.25rem;
-    }
-
-    .query-header {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .query-badge {
-      background: var(--accent);
-      color: white;
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.7rem;
-      font-weight: 600;
-    }
-
-    .query-title {
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-
-    .query-input-row {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .query-input {
-      flex: 1;
-      padding: 0.6rem 0.8rem;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text-primary);
-      font-family: inherit;
-      font-size: 0.9rem;
-    }
-
-    .query-input:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-
-    .query-input::placeholder {
-      color: var(--text-muted);
-    }
-
-    .query-examples {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-    }
-
-    .query-example {
-      padding: 0.3rem 0.6rem;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 15px;
-      color: var(--text-secondary);
-      font-size: 0.75rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .query-example:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    .query-response {
-      margin-top: 0.75rem;
-      padding: 0.75rem;
-      background: var(--bg-input);
-      border-radius: 6px;
-      font-size: 0.85rem;
-      display: none;
-      white-space: pre-wrap;
-      line-height: 1.7;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    .query-response.show {
-      display: block;
-    }
-
-    .query-response strong {
-      color: var(--accent);
-    }
-
-    /* Table Section */
-    .table-section {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .table-header {
-      padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .table-title {
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-
-    .table-search {
-      padding: 0.4rem 0.7rem;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      color: var(--text-primary);
-      font-size: 0.8rem;
-      width: 180px;
-    }
-
-    .table-search:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-
-    .table-wrapper {
-      max-height: 350px;
-      overflow-y: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.8rem;
-    }
-
-    th {
-      position: sticky;
-      top: 0;
-      background: var(--bg-input);
-      padding: 0.6rem 0.75rem;
-      text-align: left;
-      font-weight: 600;
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      color: var(--text-secondary);
-      white-space: nowrap;
-    }
-
-    td {
-      padding: 0.6rem 0.75rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    tr:hover td {
-      background: rgba(233, 69, 96, 0.05);
-    }
-
-    .cell-name a {
-      color: var(--text-primary);
-      font-weight: 500;
-    }
-
-    .cell-name a:hover {
-      color: var(--accent);
-    }
-
-    .cell-handle {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-    }
-
-    .cell-number {
-      text-align: right;
-      font-family: monospace;
-    }
-
-    .badge-verified {
-      color: var(--success);
-      font-size: 0.9em;
-    }
-
-    .pagination {
-      display: flex;
-      justify-content: center;
-      gap: 0.3rem;
-      padding: 0.75rem;
-      border-top: 1px solid var(--border);
-    }
-
-    .page-btn {
-      padding: 0.35rem 0.6rem;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      color: var(--text-secondary);
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-
-    .page-btn:hover:not(:disabled) {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    .page-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .page-btn.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: white;
-    }
-
-    /* Footer */
-    .widget-footer {
-      background: var(--bg-card);
-      padding: 0.75rem 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-    }
-
-    .footer-text {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .footer-text a {
-      color: var(--link);
-    }
-
-    /* Loading */
-    .loading {
-      display: flex;
-      justify-content: center;
-      padding: 2rem;
-    }
-
-    .spinner {
-      width: 24px;
-      height: 24px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* Responsive */
-    @media (max-width: 600px) {
-      .widget-stats {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .charts-row {
-        grid-template-columns: 1fr;
-      }
-
-      .widget-header {
-        flex-direction: column;
-        text-align: center;
-      }
-
-      .table-header {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      .table-search {
-        width: 100%;
-      }
-    }
+    :root { --accent: oklch(0.76 0.15 48); --accent-soft: oklch(0.76 0.15 48 / 0.14); }
+    body { background: transparent; }
+    .w { border: 1px solid var(--line); background: var(--bg); overflow: hidden; }
+    .w-head { padding: 16px 18px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .w-head .kicker { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em; color: var(--accent); text-transform: uppercase; }
+    .w-head .ttl { font-family: var(--font-serif); font-style: italic; font-size: 20px; line-height: 1.1; }
+    .w-act { display: flex; gap: 6px; }
+    .w-act a, .w-act button { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; padding: 7px 10px; border: 1px solid var(--line-strong); color: var(--fg-dim); }
+    .w-act a:hover, .w-act button:hover { border-color: var(--accent); color: var(--accent); }
+    .w-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); }
+    .w-stats .s { background: var(--bg-1); padding: 14px; }
+    .w-stats .v { font-family: var(--font-mono); font-size: 20px; color: var(--fg); }
+    .w-stats .l { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-mute); margin-top: 4px; }
+    .w-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 16px; }
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .ccard { border: 1px solid var(--line); background: var(--bg-1); padding: 12px; }
+    .ccard .h { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-mute); margin-bottom: 8px; }
+    .cbox { position: relative; height: 160px; }
+    .q-head { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-mute); margin-bottom: 8px; display: flex; gap: 8px; align-items: center; }
+    .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--fg-mute); display: inline-block; }
+    .dot.on { background: var(--sem-global); }
+    .q-row { display: flex; gap: 8px; border: 1px solid var(--line-strong); background: var(--bg-1); padding: 8px; }
+    .q-row input { flex: 1; font-size: 13px; background: transparent; }
+    .q-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .q-chip { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 8px; border: 1px solid var(--line); color: var(--fg-dim); }
+    .q-chip:hover { border-color: var(--fg); color: var(--fg); }
+    .q-resp { display: none; margin-top: 10px; padding: 12px; border: 1px solid var(--line); background: var(--bg-1); font-size: 13px; line-height: 1.6; }
+    .q-resp.show { display: block; }
+    .q-resp .badge { display: inline-block; font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 6px; border: 1px solid var(--line-strong); color: var(--fg-mute); margin-top: 8px; }
+    .t-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .t-head .ti { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-mute); }
+    .t-head input { font-size: 12px; border: 1px solid var(--line-strong); background: var(--bg-1); padding: 6px 9px; width: 160px; }
+    .t-wrap { max-height: 320px; overflow-y: auto; border: 1px solid var(--line); }
+    table.d { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 11px; }
+    table.d th, table.d td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+    table.d th { position: sticky; top: 0; background: var(--bg-1); font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-mute); }
+    table.d td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.d tr:hover td { background: var(--hover); }
+    table.d a { color: var(--fg); } table.d a:hover { color: var(--accent); }
+    .vy { color: var(--sem-global); }
+    .pg { display: flex; justify-content: center; gap: 4px; padding: 10px; border-top: 1px solid var(--line); }
+    .pg button { font-family: var(--font-mono); font-size: 10px; padding: 5px 9px; border: 1px solid var(--line); color: var(--fg-dim); }
+    .pg button.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+    .pg button:disabled { opacity: 0.35; }
+    .w-foot { padding: 10px 18px; border-top: 1px solid var(--line); }
+    .w-foot p { font-family: var(--font-mono); font-size: 9px; color: var(--fg-mute); text-align: center; }
+    .w-foot a { color: var(--fg-dim); }
+    .loading-dots::after { content: '…'; animation: blink 1.1s steps(1) infinite; }
+    @media (max-width: 600px) { .w-stats { grid-template-columns: repeat(2, 1fr); } .charts { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
-  <div class="widget-container">
-    <!-- Header -->
-    <div class="widget-header">
-      <div class="widget-title">
-        <h1>Cuentas monetizadas en Facebook</h1>
-        <p>Datos de Centroamérica</p>
+  <div class="w">
+    <div class="w-head">
+      <div>
+        <div class="kicker">{{ t.kicker }}</div>
+        <div class="ttl">{{ t.title }}</div>
       </div>
-      <div class="widget-actions">
-        <button class="btn btn-secondary" onclick="window.open(window.location.origin, '_blank')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-            <polyline points="15 3 21 3 21 9"></polyline>
-            <line x1="10" y1="14" x2="21" y2="3"></line>
-          </svg>
-          Abrir completo
-        </button>
-        <a href="https://vectorcritico.com" class="btn btn-primary">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-          </svg>
-          Vector Crítico
-        </a>
+      <div class="w-act">
+        <button onclick="window.open(window.location.origin, '_blank')">{{ 'Abrir completo ↗' if lang=='es' else 'Open full ↗' }}</button>
+        <a href="https://j-lab.tools" target="_blank" rel="noopener">J-LAB ↗</a>
       </div>
     </div>
 
-    <!-- Stats -->
-    <div class="widget-stats">
-      <div class="stat-item">
-        <div class="stat-value" id="statTotal">—</div>
-        <div class="stat-label">Cuentas</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="statSubs">—</div>
-        <div class="stat-label">Suscriptores</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="statVerified">—</div>
-        <div class="stat-label">Verificadas</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="statActive">—</div>
-        <div class="stat-label">Activas</div>
-      </div>
+    <div class="w-stats">
+      <div class="s"><div class="v" id="statTotal">—</div><div class="l">{{ t.stat_total }}</div></div>
+      <div class="s"><div class="v" id="statSubs">—</div><div class="l">{{ t.stat_subscribers }}</div></div>
+      <div class="s"><div class="v" id="statVerified">—</div><div class="l">{{ t.stat_verified }}</div></div>
+      <div class="s"><div class="v" id="statActive">—</div><div class="l">{{ t.stat_active }}</div></div>
     </div>
 
-    <!-- Content -->
-    <div class="widget-content">
-      <!-- Charts -->
-      <div class="charts-row">
-        <div class="chart-card">
-          <div class="chart-title">Por ubicación</div>
-          <div class="chart-container">
-            <canvas id="locationChart"></canvas>
-          </div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">Por programa</div>
-          <div class="chart-container">
-            <canvas id="programChart"></canvas>
-          </div>
-        </div>
+    <div class="w-body">
+      <div class="charts">
+        <div class="ccard"><div class="h">{{ t.chart_locations }}</div><div class="cbox"><canvas id="locationChart"></canvas></div></div>
+        <div class="ccard"><div class="h">{{ t.chart_monetization }}</div><div class="cbox"><canvas id="programChart"></canvas></div></div>
       </div>
 
-      <!-- Query -->
-      <div class="query-section">
-        <div class="query-header">
-          <span class="query-badge">🤖 AI</span>
-          <span class="query-title">Consulta en lenguaje natural</span>
+      <div>
+        <div class="q-head"><span class="dot" id="aiDot"></span><span id="aiLabel">{{ t.chat_title }}</span></div>
+        <div class="q-row">
+          <input id="queryInput" placeholder="{{ t.chat_placeholder }}">
+          <button class="btn btn-primary" id="queryBtn">{{ t.chat_send }}</button>
         </div>
-        <div class="query-input-row">
-          <input type="text" class="query-input" id="queryInput" placeholder="Pregunta sobre los datos...">
-          <button class="btn btn-primary" id="queryBtn">Consultar</button>
+        <div class="q-chips">
+          {% for ex in t.chat_examples[:4] %}<button class="q-chip">{{ ex }}</button>{% endfor %}
         </div>
-        <div class="query-examples">
-          <button class="query-example">Top 5 cuentas</button>
-          <button class="query-example">Verificadas</button>
-          <button class="query-example">Por país</button>
-          <button class="query-example">Estadísticas</button>
-        </div>
-        <div class="query-response" id="queryResponse"></div>
+        <div class="q-resp" id="queryResponse"></div>
       </div>
 
-      <!-- Table -->
-      <div class="table-section">
-        <div class="table-header">
-          <span class="table-title">Directorio de cuentas</span>
-          <input type="text" class="table-search" id="searchInput" placeholder="Buscar...">
+      <div>
+        <div class="t-head">
+          <span class="ti">{{ t.table_title }}</span>
+          <input id="searchInput" placeholder="{{ t.search_ph }}">
         </div>
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Handle</th>
-                <th>✓</th>
-                <th>Suscriptores</th>
-                <th>Ubicación</th>
-                <th>1ª Monet.</th>
-                <th>Última</th>
-              </tr>
-            </thead>
-            <tbody id="tableBody">
-              <tr><td colspan="7"><div class="loading"><div class="spinner"></div></div></td></tr>
-            </tbody>
+        <div class="t-wrap">
+          <table class="d">
+            <thead><tr>
+              <th>{{ t.col_name }}</th><th>✓</th><th class="num">{{ t.col_subs }}</th><th>{{ t.col_location }}</th><th>{{ t.col_created }}</th>
+            </tr></thead>
+            <tbody id="tableBody"><tr><td colspan="5" class="loading-dots">{{ t.loading }}</td></tr></tbody>
           </table>
         </div>
-        <div class="pagination" id="pagination"></div>
+        <div class="pg" id="pagination"></div>
       </div>
     </div>
 
-    <!-- Footer -->
-    <div class="widget-footer">
-      <p class="footer-text">
-        <a href="https://monetization.wtf" target="_blank">Monetization.wtf</a> by WHAT TO FIX | Luminate | CC BY-ND 4.0
-      </p>
+    <div class="w-foot">
+      <p><a href="https://monetization.wtf" target="_blank" rel="noopener">monetization.wtf</a> · WHAT TO FIX · CC BY-ND 4.0 · {{ t.footer_tool }}</p>
     </div>
   </div>
 
   <script>
     const API_BASE = window.location.origin;
+    const LANG = "{{ lang }}";
+    const LOCALE = LANG === 'es' ? 'es-GT' : 'en-US';
+    const T = { noResults: "{{ t.no_results }}", badgeClaude: "{{ t.badge_claude }}", badgeLocal: "{{ t.badge_local }}" };
     let currentPage = 1;
+    const css = () => getComputedStyle(document.documentElement);
+    const tok = n => css().getPropertyValue(n).trim();
+    const palette = () => ['--sem-view','--sem-facts','--sem-scene','--sem-global','--sem-analysis'].map(tok);
+    function esc(s){ return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+    function fmt(num){ if(num>=1e6) return (num/1e6).toFixed(1)+'M'; if(num>=1e3) return (num/1e3).toFixed(1)+'K'; return Number(num).toLocaleString(LOCALE); }
+    function debounce(fn,d){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),d); }; }
 
-    function formatNumber(num) {
-      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-      if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-      return num.toLocaleString('es-GT');
+    async function loadStats(){
+      try { const d = await (await fetch(`${API_BASE}/api/stats`)).json();
+        statTotal.textContent = fmt(d.total_accounts); statSubs.textContent = fmt(d.total_subscribers);
+        statVerified.textContent = fmt(d.verified_accounts); statActive.textContent = fmt(d.monetization_active);
+      } catch(e){}
     }
-
-    function debounce(fn, delay) {
-      let timer;
-      return (...args) => {
-        clearTimeout(timer);
-        timer = setTimeout(() => fn(...args), delay);
-      };
+    async function loadCharts(){
+      const P = palette(), ACC = tok('--accent'), GRID = tok('--line');
+      Chart.defaults.color = tok('--fg-dim'); Chart.defaults.borderColor = GRID;
+      Chart.defaults.font.family = "'JetBrains Mono', monospace"; Chart.defaults.font.size = 9;
+      try { const loc = await (await fetch(`${API_BASE}/api/chart/locations`)).json();
+        new Chart(locationChart, { type:'doughnut',
+          data:{ labels:loc.map(d=>d.location), datasets:[{ data:loc.map(d=>d.accounts), backgroundColor:P, borderColor:tok('--bg-1'), borderWidth:2 }]},
+          options:{ responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{ legend:{ position:'right', labels:{ boxWidth:8, padding:6, font:{size:9} }}}}});
+      } catch(e){}
+      try { const mon = await (await fetch(`${API_BASE}/api/chart/monetization`)).json();
+        new Chart(programChart, { type:'bar',
+          data:{ labels:['Articles','In-Stream','Reels','Content'], datasets:[{ data:Object.values(mon.accounts), backgroundColor:ACC }]},
+          options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}}, scales:{ x:{ grid:{display:false}}, y:{ grid:{color:GRID}, beginAtZero:true }}}});
+      } catch(e){}
     }
-
-    // Load stats
-    async function loadStats() {
-      try {
-        const res = await fetch(`${API_BASE}/api/stats`);
-        const data = await res.json();
-        document.getElementById('statTotal').textContent = formatNumber(data.total_accounts);
-        document.getElementById('statSubs').textContent = formatNumber(data.total_subscribers);
-        document.getElementById('statVerified').textContent = data.verified_accounts;
-        document.getElementById('statActive').textContent = formatNumber(data.monetization_active);
-      } catch (err) {
-        console.error('Error loading stats:', err);
-      }
+    async function loadAccounts(){
+      const params = new URLSearchParams({ page: currentPage, per_page: 15, sort:'account_subscriber_count', order:'desc' });
+      if (searchInput.value) params.append('search', searchInput.value);
+      try { const d = await (await fetch(`${API_BASE}/api/accounts?${params}`)).json(); renderTable(d); } catch(e){}
     }
-
-    // Load charts
-    async function loadCharts() {
-      Chart.defaults.color = '#a0a0a0';
-      Chart.defaults.borderColor = '#2a2a4a';
-
-      try {
-        const locRes = await fetch(`${API_BASE}/api/chart/locations`);
-        const locData = await locRes.json();
-        
-        new Chart(document.getElementById('locationChart'), {
-          type: 'doughnut',
-          data: {
-            labels: locData.map(d => d.location),
-            datasets: [{
-              data: locData.map(d => d.accounts),
-              backgroundColor: ['#e94560', '#4fc3f7', '#4ecca3', '#ffc107', '#a855f7'],
-              borderWidth: 0
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { position: 'right', labels: { boxWidth: 12, padding: 8, font: { size: 10 } } }
-            }
-          }
-        });
-      } catch (err) {
-        console.error('Error loading location chart:', err);
-      }
-
-      try {
-        const monRes = await fetch(`${API_BASE}/api/chart/monetization`);
-        const monData = await monRes.json();
-        
-        new Chart(document.getElementById('programChart'), {
-          type: 'bar',
-          data: {
-            labels: ['Articles', 'In-Stream', 'Reels', 'Content'],
-            datasets: [{
-              data: Object.values(monData.accounts),
-              backgroundColor: '#e94560',
-              borderRadius: 4
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { grid: { display: false } },
-              y: { grid: { color: '#2a2a4a' }, beginAtZero: true }
-            }
-          }
-        });
-      } catch (err) {
-        console.error('Error loading monetization chart:', err);
-      }
-    }
-
-    // Load accounts
-    async function loadAccounts() {
-      const search = document.getElementById('searchInput').value;
-      const params = new URLSearchParams({
-        page: currentPage,
-        per_page: 15,
-        sort: 'account_subscriber_count',
-        order: 'desc'
-      });
-      if (search) params.append('search', search);
-
-      try {
-        const res = await fetch(`${API_BASE}/api/accounts?${params}`);
-        const data = await res.json();
-        renderTable(data);
-      } catch (err) {
-        console.error('Error loading accounts:', err);
-      }
-    }
-
-    function renderTable(data) {
-      const tbody = document.getElementById('tableBody');
-      
-      if (data.accounts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:1rem;color:var(--text-muted);">Sin resultados</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = data.accounts.map(acc => `
+    function renderTable(d){
+      if (!d.accounts || !d.accounts.length){ tableBody.innerHTML = `<tr><td colspan="5">${T.noResults}</td></tr>`; pagination.innerHTML=''; return; }
+      tableBody.innerHTML = d.accounts.map(a => `
         <tr>
-          <td class="cell-name"><a href="${acc.facebook_url}" target="_blank">${acc.account_name.substring(0, 25)}${acc.account_name.length > 25 ? '...' : ''}</a></td>
-          <td class="cell-handle">${acc.account_handle ? '@' + acc.account_handle.substring(0, 15) : '—'}</td>
-          <td>${acc.account_verified ? '<span class="badge-verified">✓</span>' : ''}</td>
-          <td class="cell-number">${formatNumber(acc.account_subscriber_count)}</td>
-          <td>${acc.admin_location}</td>
-          <td>${acc.first_recorded_monetization || '—'}</td>
-          <td>${acc.last_recorded_monetization || '—'}</td>
-        </tr>
-      `).join('');
-
-      // Pagination
-      const pagination = document.getElementById('pagination');
-      if (data.total_pages <= 1) {
-        pagination.innerHTML = '';
-        return;
-      }
-
-      let html = `<button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>←</button>`;
-      
-      for (let i = Math.max(1, currentPage - 2); i <= Math.min(data.total_pages, currentPage + 2); i++) {
-        html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
-      }
-      
-      html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === data.total_pages ? 'disabled' : ''}>→</button>`;
-      pagination.innerHTML = html;
+          <td><a href="${a.facebook_url}" target="_blank" rel="noopener">${esc(a.account_name.slice(0,26))}</a></td>
+          <td>${a.account_verified ? '<span class="vy">✓</span>' : ''}</td>
+          <td class="num">${fmt(a.account_subscriber_count)}</td>
+          <td>${esc(a.admin_location)}</td>
+          <td>${a.page_created_date || '—'}</td>
+        </tr>`).join('');
+      if (d.total_pages <= 1){ pagination.innerHTML=''; return; }
+      let h = `<button onclick="goToPage(${currentPage-1})" ${currentPage===1?'disabled':''}>←</button>`;
+      for (let i=Math.max(1,currentPage-2); i<=Math.min(d.total_pages,currentPage+2); i++)
+        h += `<button class="${i===currentPage?'active':''}" onclick="goToPage(${i})">${i}</button>`;
+      h += `<button onclick="goToPage(${currentPage+1})" ${currentPage===d.total_pages?'disabled':''}>→</button>`;
+      pagination.innerHTML = h;
     }
+    function goToPage(p){ currentPage=p; loadAccounts(); }
 
-    function goToPage(page) {
-      currentPage = page;
-      loadAccounts();
-    }
-
-    // Query
-    async function handleQuery() {
-      const input = document.getElementById('queryInput').value.trim();
-      if (!input) return;
-
-      const response = document.getElementById('queryResponse');
-      response.classList.add('show');
-      response.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-
+    async function handleQuery(){
+      const q = queryInput.value.trim(); if (!q) return;
+      const r = document.getElementById('queryResponse');
+      r.classList.add('show'); r.innerHTML = `<span class="loading-dots">…</span>`;
       try {
-        const res = await fetch(`${API_BASE}/api/query`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: input })
-        });
-        const data = await res.json();
-        response.innerHTML = data.response.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-      } catch (err) {
-        response.innerHTML = 'Error al procesar la consulta.';
-      }
+        const res = await fetch(`${API_BASE}/api/ai/chat`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ query: q }) });
+        const d = await res.json();
+        const badge = d.engine === 'claude' ? T.badgeClaude : T.badgeLocal;
+        r.innerHTML = esc(d.response||'—').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/^[•\-]\s?/gm,'· ').replace(/\n/g,'<br>') + `<div class="badge">${esc(badge)}</div>`;
+      } catch(e){ r.innerHTML = LANG==='es'?'Error al procesar la consulta.':'Error processing the query.'; }
+    }
+    async function loadAiStatus(){
+      try { const d = await (await fetch(`${API_BASE}/api/ai/status`)).json();
+        if (d.ai_enabled){ aiDot.classList.add('on'); aiLabel.textContent = `${aiLabel.textContent} · ${d.model}`; }
+      } catch(e){}
     }
 
-    // Init
     document.addEventListener('DOMContentLoaded', () => {
-      loadStats();
-      loadCharts();
-      loadAccounts();
-
-      document.getElementById('searchInput').addEventListener('input', debounce(() => {
-        currentPage = 1;
-        loadAccounts();
-      }, 300));
-
-      document.getElementById('queryBtn').addEventListener('click', handleQuery);
-      document.getElementById('queryInput').addEventListener('keypress', e => {
-        if (e.key === 'Enter') handleQuery();
-      });
-
-      document.querySelectorAll('.query-example').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.getElementById('queryInput').value = btn.textContent;
-          handleQuery();
-        });
-      });
+      loadStats(); loadCharts(); loadAccounts(); loadAiStatus();
+      searchInput.addEventListener('input', debounce(()=>{ currentPage=1; loadAccounts(); }, 300));
+      queryBtn.addEventListener('click', handleQuery);
+      queryInput.addEventListener('keydown', e => { if (e.key==='Enter'){ e.preventDefault(); handleQuery(); }});
+      document.querySelectorAll('.q-chip').forEach(b => b.addEventListener('click', () => { queryInput.value = b.textContent; handleQuery(); }));
     });
   </script>
 </body>
