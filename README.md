@@ -1,174 +1,134 @@
-# Cuentas Monetizadas en Facebook - Herramienta de Visualización
+# Monetización · Archivo de Meta en América Latina
 
-Una herramienta interactiva para explorar y consultar datos de cuentas de Facebook que participan en programas de monetización en Centroamérica.
+Una herramienta de **[J-Lab](https://j-lab.tools)** para explorar y consultar el archivo de monetización de Meta: las cuentas de Facebook e Instagram inscritas en los programas de redistribución de ingresos de Meta en América Latina.
 
-## Render de ejemplo 
-<img width="967" height="878" alt="monetization tool " src="https://github.com/user-attachments/assets/0b00699e-70ae-48b9-beb1-8a9619c93155" />
+> En producción: **https://monetizacion.j-lab.tools**
 
-https://monetization-tool-production.up.railway.app
+Está pensada para periodistas que investigan cómo Meta canaliza dinero a creadores y medios: encontrar redes coordinadas, asimetrías regionales y crecimientos atípicos que no son visibles en las herramientas oficiales.
 
 ## 🚀 Características
 
-- **Dashboard completo** con visualizaciones de datos
-- **Consultas en lenguaje natural** usando IA
-- **Tabla interactiva** con filtros y ordenamiento
-- **Páginas individuales** para cada cuenta
+- **Dashboard** con visualizaciones y estadísticas en vivo
+- **Chat con IA real** (Claude, con _tool-use_) que responde **basándose en la base de datos** — sin inventar cifras
+- **Análisis para investigación**: ráfagas coordinadas, migración de programas, brecha de verificación, asimetría entre países, crecimiento atípico
+- **Tabla interactiva** con filtros, búsqueda y ordenamiento
+- **Páginas individuales** por cuenta
 - **Widget embebible** para Ghost y otros blogs
+- **Bilingüe** ES/EN · tema claro/oscuro
 - **API REST** para integraciones
 
-## 📊 Visualizaciones
+## 🤖 Chat con IA (grounded)
 
-- Cuentas por ubicación (gráfico circular)
-- Programas de monetización (barras)
-- Timeline de creación de cuentas (línea)
-- Top 10 cuentas por suscriptores
+El endpoint `POST /api/ai/chat` usa **Claude con _tool-use_** sobre un conjunto de funciones de consulta seguras (top de cuentas, por país/año/programa/idioma, búsqueda, estadísticas). Claude elige las herramientas y compone una respuesta en el idioma del usuario, citando cifras exactas. No ejecuta código ni SQL arbitrario.
 
-## 🛠️ Despliegue
+- Requiere `ANTHROPIC_API_KEY` (lado servidor). Configúrala como secreto en Render.
+- **Sin clave**, el chat degrada elegantemente al motor local de palabras clave (`engine: "local"`) — la herramienta sigue funcionando.
+- Cualquier error/límite también degrada al motor local (`engine: "local-fallback"`, HTTP 200).
 
-### Opción 1: Render (Recomendado - Gratis)
+Variables de entorno (ver `.env.example`):
 
-1. Crea una cuenta en [render.com](https://render.com)
-2. Conecta tu repositorio de GitHub
-3. Haz clic en "New" → "Blueprint"
-4. Selecciona tu repositorio
-5. Render detectará automáticamente el `render.yaml` y desplegará
+| Var | Default | Descripción |
+|-----|---------|-------------|
+| `ANTHROPIC_API_KEY` | — | Clave Anthropic. Vacía = motor local. |
+| `ANTHROPIC_MODEL` | `claude-haiku-4-5` | Modelo del chat (estándar J-Lab). |
+| `AI_MAX_TOOL_TURNS` | `6` | Máx. de turnos de herramientas por consulta. |
 
-**O manualmente:**
-1. New → Web Service
-2. Conecta tu repo
-3. Build Command: `pip install -r requirements.txt`
-4. Start Command: `gunicorn app:app --bind 0.0.0.0:$PORT`
+## 📊 Visualizaciones y análisis
 
-### Opción 2: Railway
+Panorama: cuentas por país (dona), programas (barras), creación por año (línea), top 10.
+Análisis para investigación (`/api/analysis/*`): ráfagas coordinadas, migración de programas, brecha verificadas/no verificadas, asimetría entre países, outliers de crecimiento. **Son pistas para investigar, no veredictos.**
 
-1. Ve a [railway.app](https://railway.app)
-2. New Project → Deploy from GitHub
-3. Selecciona tu repositorio
-4. Railway detectará automáticamente Flask
+## 🔄 Actualizar datos (importador)
 
-### Opción 3: Heroku
+**Un solo comando** — `--fetch` jala todos los países de América Latina en vivo desde el endpoint de exportación del archivo (el mismo `csv_data_table` que usa el botón "Export CSV" del sitio) y los normaliza:
 
 ```bash
-heroku create tu-app-name
-git push heroku main
+python scripts/import_archive.py --fetch --dry-run                      # previsualiza conteos
+python scripts/import_archive.py --fetch --output data/accounts.csv     # escribe el CSV
 ```
 
-### Opción 4: GitHub Pages (Solo frontend estático)
+Trae ~64K cuentas (FB) de 22 países LatAm con datos hasta la fecha más reciente del archivo. Luego haz redeploy (commit del nuevo `data/accounts.csv`).
 
-Para una versión estática con datos embebidos, usa el archivo `standalone.html` (ver más abajo).
+**Alternativa manual** — si prefieres exportar a mano desde [monetization.wtf/monetization-archive](https://www.monetization.wtf/monetization-archive) (botón "Export CSV"), pasa el archivo:
 
-## 📁 Estructura del Proyecto
-
+```bash
+python scripts/import_archive.py --input raw_export.csv --output data/accounts.csv
 ```
-monetization-tool/
-├── app.py              # Backend Flask
-├── requirements.txt    # Dependencias Python
-├── render.yaml        # Config para Render
-├── Procfile           # Config para Heroku
-├── data/
-│   └── accounts.csv   # Datos de cuentas
-└── templates/
-    ├── index.html     # Dashboard principal
-    ├── account.html   # Detalle de cuenta
-    └── widget.html    # Widget embebible
+
+El importador es robusto a las inconsistencias del CSV crudo (casing de columnas, UTF-8 inválido, escapes, nombres de idioma no estándar, fechas fantasma/epoch). Filtra a los países de América Latina por **código ISO-2**, normaliza nombres de país, y deduplica por `account_id`. El esquema de salida son las 17 columnas estándar (ver el _docstring_ del script).
+
+## 🔧 Desarrollo local
+
+```bash
+git clone https://github.com/luisassardo/monetization-tool
+cd monetization-tool
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# (opcional) export ANTHROPIC_API_KEY=sk-ant-...   # activa el chat con Claude
+python app.py
+# Abrir http://localhost:5000
+```
+
+## 🛠️ Despliegue (Render)
+
+1. Conecta el repo en [render.com](https://render.com) → New → Blueprint (detecta `render.yaml`).
+2. Añade `ANTHROPIC_API_KEY` como **secreto** en el dashboard de Render (no lo commitees).
+3. Apunta el dominio `monetizacion.j-lab.tools` al servicio.
+
+Manual: Build `pip install -r requirements.txt` · Start `gunicorn app:app --bind 0.0.0.0:$PORT`.
+
+## 📝 Integración con Ghost (widget)
+
+```html
+<iframe
+  src="https://monetizacion.j-lab.tools/widget"
+  width="100%" height="900" frameborder="0"
+  style="border:0; overflow:hidden;"></iframe>
 ```
 
 ## 🔗 Endpoints de la API
 
 | Endpoint | Método | Descripción |
 |----------|--------|-------------|
-| `/` | GET | Dashboard principal |
-| `/cuenta/<id>` | GET | Detalle de cuenta |
-| `/widget` | GET | Widget embebible |
+| `/` · `/cuenta/<id>` · `/widget` | GET | Páginas (dashboard, detalle, widget). `?lang=es\|en` |
 | `/api/stats` | GET | Estadísticas generales |
-| `/api/accounts` | GET | Lista de cuentas (paginada) |
+| `/api/accounts` | GET | Lista de cuentas (paginada, filtrable) |
 | `/api/account/<id>` | GET | Datos de una cuenta |
-| `/api/chart/locations` | GET | Datos para gráfico de ubicaciones |
-| `/api/chart/timeline` | GET | Datos para gráfico temporal |
-| `/api/chart/monetization` | GET | Datos de programas |
-| `/api/query` | POST | Consulta en lenguaje natural |
 | `/api/filters` | GET | Opciones de filtros |
+| `/api/chart/locations` · `/timeline` · `/monetization` | GET | Datos para gráficos |
+| `/api/analysis/coordinated-bursts` | GET | Cuentas creadas el mismo día/país (`?min=3`) |
+| `/api/analysis/program-migration` | GET | Programas por cohorte de año |
+| `/api/analysis/verified-gap` | GET | Verificadas vs no verificadas por país |
+| `/api/analysis/country-asymmetry` | GET | Métricas normalizadas por país |
+| `/api/analysis/growth-outliers` | GET | Páginas jóvenes con audiencias atípicas |
+| `/api/ai/chat` | POST | **Chat con IA** (Claude tool-use; fallback local) |
+| `/api/ai/status` | GET | Si la IA está habilitada + modelo |
+| `/api/query` | POST | Motor local de palabras clave (legacy) |
 
 ### Parámetros de `/api/accounts`
+`page`, `per_page` (max 100), `search`, `location`, `verified` (`true`/`false`), `language`, `min_subs`, `sort`, `order` (`asc`/`desc`).
 
-- `page`: Número de página (default: 1)
-- `per_page`: Resultados por página (default: 25, max: 100)
-- `search`: Búsqueda por nombre/handle
-- `location`: Filtrar por ubicación
-- `verified`: `true` o `false`
-- `language`: Filtrar por idioma
-- `min_subs`: Mínimo de suscriptores
-- `sort`: Campo para ordenar
-- `order`: `asc` o `desc`
+## 📁 Estructura
 
-## 📝 Integración con Ghost
-
-### Método 1: Iframe (Recomendado)
-
-Después de desplegar, usa este código en un bloque HTML de Ghost:
-
-```html
-<iframe 
-  src="https://TU-APP.onrender.com/widget" 
-  width="100%" 
-  height="800px" 
-  frameborder="0"
-  style="border-radius: 12px; overflow: hidden;">
-</iframe>
+```
+monetization-tool/
+├── app.py                     # Backend Flask + tools de IA + análisis
+├── requirements.txt
+├── render.yaml · Procfile · runtime.txt
+├── .env.example
+├── scripts/
+│   └── import_archive.py      # Normalizador de export → data/accounts.csv
+├── static/css/tokens.css      # Sistema de diseño J-Lab (vendored)
+├── data/accounts.csv          # Datos (América Latina)
+└── templates/
+    ├── index.html             # Dashboard
+    ├── account.html           # Detalle de cuenta
+    └── widget.html            # Widget embebible
 ```
 
-### Método 2: Enlace con botón
+## 📜 Licencia y atribución
 
-```html
-<div style="text-align: center; padding: 2rem;">
-  <a href="https://TU-APP.onrender.com" 
-     target="_blank"
-     style="display: inline-block; padding: 1rem 2rem; background: #e94560; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
-    Ver herramienta de datos →
-  </a>
-</div>
-```
+Datos: **[monetization.wtf](https://monetization.wtf)** — mantenido por [WHAT TO FIX](https://www.whattofix.tech/) con apoyo de Luminate · ©️ CC BY-ND 4.0 · [Términos](https://monetization.wtf/terms)
 
-## 🔄 Actualizar Datos
-
-Para actualizar los datos, simplemente reemplaza el archivo `data/accounts.csv` con el nuevo CSV y haz redeploy.
-
-El CSV debe tener estas columnas:
-- `account_id`
-- `account_name`
-- `account_handle`
-- `account_verified`
-- `page_created_date`
-- `account_subscriber_count`
-- `account_language_code`
-- `account_language`
-- `admin_location_code`
-- `admin_location`
-- `last_onboarding`
-- `first_recorded_monetization`
-- `last_recorded_monetization`
-- `facebook_instant_articles_session_count`
-- `facebook_in_stream_ads_session_count`
-- `facebook_ads_on_reels_session_count`
-- `facebook_content_monetization_session_count`
-
-## 📜 Licencia
-
-Datos: [Monetization.wtf](https://monetization.wtf) - WHAT TO FIX con apoyo de Luminate  
-©️ CC BY-ND 4.0
-
-## 🔧 Desarrollo Local
-
-```bash
-# Clonar repositorio
-git clone tu-repo
-cd monetization-tool
-
-# Instalar dependencias
-pip install -r requirements.txt
-
-# Ejecutar
-python app.py
-
-# Abrir http://localhost:5000
-```
+Herramienta: J-Lab, con atribución a Vector Crítico. Código bajo licencia MIT (ver `LICENSE`).

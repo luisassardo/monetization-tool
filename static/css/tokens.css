@@ -1,0 +1,245 @@
+/* J-LAB.TOOLS — design tokens
+   Dark-first. Warm off-white foreground. Semafor accents for semantic state only. */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Type */
+  --font-serif: 'Instrument Serif', 'Times New Roman', serif;
+  --font-sans: 'Inter Tight', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Scale */
+  --fs-xs: 10px;
+  --fs-sm: 11px;
+  --fs-base: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 28px;
+  --fs-3xl: 42px;
+  --fs-display: 72px;
+
+  /* Grid */
+  --unit: 4px;
+  --rail: 220px;
+  --gutter: 24px;
+
+  /* Semafor accents (low-sat, for tags/states only) */
+  --sem-view:     oklch(70% 0.13 240);   /* blue */
+  --sem-facts:    oklch(82% 0.14 90);    /* yellow */
+  --sem-scene:    oklch(64% 0.18 25);    /* red */
+  --sem-global:   oklch(70% 0.13 150);   /* green */
+  --sem-analysis: oklch(68% 0.14 310);   /* purple */
+}
+
+/* DARK (default) */
+:root, [data-theme='dark'] {
+  --bg: #0A0A0A;
+  --bg-1: #111111;
+  --bg-2: #171717;
+  --fg: #F5F5F2;
+  --fg-dim: #A8A8A3;
+  --fg-mute: #6B6B66;
+  --line: rgba(245, 245, 242, 0.08);
+  --line-strong: rgba(245, 245, 242, 0.18);
+  --hover: rgba(245, 245, 242, 0.04);
+  --selection: rgba(245, 245, 242, 0.15);
+}
+
+/* LIGHT */
+[data-theme='light'] {
+  --bg: #F5F5F2;
+  --bg-1: #EFEFEB;
+  --bg-2: #E7E7E2;
+  --fg: #0A0A0A;
+  --fg-dim: #4A4A45;
+  --fg-mute: #8A8A85;
+  --line: rgba(10, 10, 10, 0.09);
+  --line-strong: rgba(10, 10, 10, 0.22);
+  --hover: rgba(10, 10, 10, 0.04);
+  --selection: rgba(10, 10, 10, 0.1);
+}
+
+/* Reset */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'ss01', 'cv11';
+}
+::selection { background: var(--selection); color: var(--fg); }
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; padding: 0; }
+input, textarea { font: inherit; color: inherit; background: none; border: none; outline: none; }
+a { color: inherit; text-decoration: none; }
+
+/* Utilities */
+.mono { font-family: var(--font-mono); font-feature-settings: 'ss01', 'ss02', 'zero'; }
+.serif { font-family: var(--font-serif); }
+.sans { font-family: var(--font-sans); }
+.upper { text-transform: uppercase; letter-spacing: 0.08em; }
+.dim { color: var(--fg-dim); }
+.mute { color: var(--fg-mute); }
+
+/* Hairline divider */
+.hr { height: 1px; background: var(--line); width: 100%; }
+.vr { width: 1px; background: var(--line); align-self: stretch; }
+
+/* Semafor pill */
+.sem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border: 1px solid currentColor;
+  border-radius: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+.sem::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: currentColor;
+  border-radius: 50%;
+  flex: none;
+}
+.sem-view     { color: var(--sem-view); }
+.sem-facts    { color: var(--sem-facts); }
+.sem-scene    { color: var(--sem-scene); }
+.sem-global   { color: var(--sem-global); }
+.sem-analysis { color: var(--sem-analysis); }
+.sem-neutral  { color: var(--fg-dim); }
+
+/* Bracket label — "[ KEY ]" style */
+.bkt {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+}
+.bkt::before { content: '[ '; }
+.bkt::after  { content: ' ]'; }
+
+/* Section header */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+.section-head .marker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--fg-mute);
+  text-transform: uppercase;
+}
+.section-head .title {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--fg);
+}
+
+/* Button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 9px 14px;
+  border: 1px solid var(--line-strong);
+  color: var(--fg);
+  background: transparent;
+  transition: all 0.12s ease;
+  cursor: pointer;
+}
+.btn:hover { background: var(--hover); border-color: var(--fg); }
+.btn-primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.btn-primary:hover { background: var(--fg-dim); border-color: var(--fg-dim); }
+.btn-ghost { border-color: transparent; color: var(--fg-dim); padding: 6px 10px; }
+.btn-ghost:hover { color: var(--fg); background: var(--hover); }
+
+/* Card */
+.card {
+  border: 1px solid var(--line);
+  background: var(--bg-1);
+  padding: 20px;
+  position: relative;
+}
+
+/* Tabular data */
+table.tab {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+table.tab th, table.tab td {
+  text-align: left;
+  padding: 10px 14px 10px 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+table.tab th {
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+  padding-bottom: 8px;
+}
+table.tab tr:hover td { background: var(--hover); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line-strong); }
+::-webkit-scrollbar-thumb:hover { background: var(--fg-mute); }
+
+/* Blinking caret */
+@keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+.caret { display: inline-block; width: 0.55em; height: 1em; background: var(--fg); vertical-align: -0.15em; margin-left: 2px; animation: blink 1.1s steps(1) infinite; }
+
+/* Diagonal-stripe placeholder */
+.stripe-placeholder {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent 0,
+    transparent 8px,
+    var(--line) 8px,
+    var(--line) 9px
+  );
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+}
+
+/* Focus */
+:focus-visible { outline: 1px solid var(--fg); outline-offset: 2px; }
